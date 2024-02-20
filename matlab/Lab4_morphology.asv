@@ -105,4 +105,48 @@ I = imread('assets/blobs.tif');
 I = imcomplement(I);
 level = graythresh(I);
 BW = imbinarize(I, level);
-imshow()
+imshow(BW)
+
+SE = ones(3,3);
+BWe = imerode(BW,SE); % erode
+bound_det = BW - BWe;
+
+figure
+montage({I, BW, BWe, bound_det}, "size", [2 2])
+title('Original, Inverted, Eroded, Boundary Detected')
+
+%% 4 - bwmorph - thin and thicken
+
+fing = imread('assets/fingerprint.tif');
+f = imcomplement(fing);
+level = graythresh(f);
+BW = imbinarize(f, level);
+imshow(BW)
+
+g1 = bwmorph(BW, 'thin');
+g2 = bwmorph(BW, 'thin', 2);
+g3 = bwmorph(BW, 'thin', 3);
+g4 = bwmorph(BW, 'thin', 4);
+g5 = bwmorph(BW, 'thin', 5);
+
+figure
+montage({BW, g1, g2, g3, g4, g5}, "size", [2 3])
+title('Original and Thinning x1 to x5')
+
+ginf = bwmorph(BW, 'thin', inf);
+figure
+montage({BW,ginf})
+title('Original and Infinite Thinning')
+
+level = graythresh(fing);
+h = imbinarize(fing, level);
+
+h1 = bwmorph(h, 'thin');
+h2 = bwmorph(h, 'thin', 2);
+h3 = bwmorph(h, 'thin', 3);
+h4 = bwmorph(h, 'thin', 4);
+h5 = bwmorph(h, 'thin', 5);
+
+figure
+montage({h, h1, h2, h3, h4, h5}, "size", [2 3])
+title('Original and Thinning x1 to x5')

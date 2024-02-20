@@ -114,3 +114,74 @@ bound_det = BW - BWe;
 figure
 montage({I, BW, BWe, bound_det}, "size", [2 2])
 title('Original, Inverted, Eroded, Boundary Detected')
+
+%% 4 - bwmorph - thin and thicken
+
+fing = imread('assets/fingerprint.tif');
+f = imcomplement(fing);
+level = graythresh(f);
+BW = imbinarize(f, level);
+imshow(BW)
+
+g1 = bwmorph(BW, 'thin');
+g2 = bwmorph(BW, 'thin', 2);
+g3 = bwmorph(BW, 'thin', 3);
+g4 = bwmorph(BW, 'thin', 4);
+g5 = bwmorph(BW, 'thin', 5);
+
+figure
+montage({BW, g1, g2, g3, g4, g5}, "size", [2 3])
+title('Original and Thinning x1 to x5')
+
+ginf = bwmorph(BW, 'thin', inf);
+figure
+montage({BW,ginf})
+title('Original and Infinite Thinning')
+
+level = graythresh(fing);
+h = imbinarize(fing, level);
+
+h1 = bwmorph(h, 'thin');
+h2 = bwmorph(h, 'thin', 2);
+h3 = bwmorph(h, 'thin', 3);
+h4 = bwmorph(h, 'thin', 4);
+h5 = bwmorph(h, 'thin', 5);
+
+figure
+montage({h, h1, h2, h3, h4, h5}, "size", [2 3])
+title('Inverted')
+
+%% 5 - Connected Components and Labels
+
+t = imread('assets/text.png');
+CC = bwconncomp(t);
+
+numPixels = cellfun(@numel, CC.PixelIdxList);
+[biggest, idx] = max(numPixels);
+t(CC.PixelIdxList{idx}) = 0;
+figure
+imshow(t)
+
+%% 6 - Morphological Reconstruction
+
+clear all
+close all
+f = imread('assets/text_bw.tif');
+se = ones(17,1);
+g = imerode(f, se);
+fo = imopen(f, se);     % perform open to compare
+fr = imreconstruct(g, f);
+montage({f, g, fo, fr}, "size", [2 2])
+
+ff = imfill(f);
+figure
+montage({f, ff})
+
+%% 7 - Morphological Operations on Greyscale
+clear all; close all;
+f = imread('assets/headCT.tif');
+se = strel('square',3);
+gd = imdilate(f, se);
+ge = imerode(f, se);
+gg = gd - ge;
+montage({f, gd, ge, gg}, 'size', [2 2])

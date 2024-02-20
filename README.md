@@ -196,11 +196,123 @@ imshow(BW)
 - The end result still has the noise bits
 - improvement - slightly erode BW first to remove noise
 ## 4 - bwmorph - Thinning and Thickening
+`bwmorph` is a general morphological function which implements operations based on combinations and erosions
 
+```
+% Call Syntax:
+g = bwmorph(f, operation, n)
+```
+- `f` is the input binary image
+- `operation` is the string specifying desired operation (see below)
+- `n` is a positive integer specifying times to repeat the operation (default 1)
+
+![|450](assets/bwmorph.jpg)
+
+![|400](img/fingy4_ori.jpg)
+The original image needs to be inverted like in task 3.
+
+```
+f = imread('assets/fingerprint.tif');
+f = imcomplement(f);
+level = graythresh(f);
+BW = imbinarize(f, level);
+imshow(BW)
+```
+
+Perform thinning multiple times
+![|600](img/fingy4_thin5.jpg)
+
+Perform thinning infinite times (operation will stop when image stops changing)
+![|600](img/fingy4_inf.jpg)
+
+Perform this operation with a black on white background instead.
+![|600](img/fingy4_invinv.jpg)
+- This shows how thinning is basically an inverse version of thickening
 ## 5 - Connected Components and Labels
+In processing and interpreting an image, it is often required to find objects in an image. 
+After binarization, these objects will form regions of 1's in background of 0's. 
+- These are connected components within the image.
 
+Find the **largest connected component** in this image, and then **erase it**
+
+![](text.png)
+
+`bwconncomp` performs morphological operation that extracts connected components
+```
+t = imread('assets/text.png');
+imshow(t)
+CC = bwconncomp(t)
+```
+
+CC is a data structure returned by the function as below
+![|250](img/CC.png)![|450](assets/cc.jpg)
+
+Determine which is the largest component in the image and then erase it (i.e. set all pixels within that component to 0)
+
+```
+numPixels = cellfun(@numel, CC.PixelIdxList);
+[biggest, idx] = max(numPixels);
+t(CC.PixelIdxList{idx}) = 0;
+figure
+imshow(t)
+```
+
+![|400](img/fingy4_extract.jpg)
+- Notice that ff is removed
+
+1. **_cellfun_** applies a function to each element in an array. 
+	- In this case, the function _numel_ is applied to each member of the list **_CC.PixelIdxList_**. The kth member of this list is itself a list of _(x,y)_ indices to the pixels within this component.
+2. The function **_numel_** returns the number of elements in an array or list. 
+	- In this case, it returns the number of pixels in each of the connected components.
+3. The first statement returns **_numPixels_**, which is an array containing the number of pixels in each of the detected connected components in the image. 
+4. The **_max_** function returns the maximum value in numPixels and its index in the array.
+5. Once this index is found, we have identified the largest connect component. Using this index information, we can retrieve the list of pixel coordinates for this component in **_CC.PixelIdxList_**.
 ## 6 - Morphological Reconstruction
+**_Morphological reconstruction_** (MR) is a better method that restores the original shapes of the objects that remain after erosion.
 
+MR requires three things: an input image `f` to be processed called the `mask`, a marker image `g`, and a structuring element `se`. The steps are:
+1. Find the marker image **_g_** by eroding the mask with an **_se_** that mark the places where the desirable features are located. 
+	- In our case, the desired characters are all with long vertical elements that are 17 pixels tall. Therefore the **_se_** used for erosion is a 17x1 of 1's.
+2. Apply the reconstruction operation using Matlab's **_imreconstruct_** function between the **marker** **_g_** and the **mask** **_f_**.
+
+A binary image of printed text is processed so that the letters that are long and thin are kept, while all others are removed.
+
+```
+clear all
+close all
+f = imread('assets/text_bw.tif');
+se = ones(17,1);
+g = imerode(f, se);
+fo = imopen(f, se);     % perform open to compare
+fr = imreconstruct(g, f);
+montage({f, g, fo, fr}, "size", [2 2])
+```
+
+![|600](img/text_MR.jpg)
+- fr (last one) adds back letters that fit the criteria
+
+`imfill` fills holes in images
+```
+ff = imfill(f);
+figure
+montage({f, ff})
+```
+
+![|600](img/text_fill.jpg)
 ## 7 - Morphological Operations on Greyscale Images
+Binary images vividly show the effect of morphological operations, but we can also do them on greyscale images
+
+Erosion and Dilation on Greyscale images:
+```
+clear all; close all;
+f = imread('assets/headCT.tif');
+se = strel('square',3);
+gd = imdilate(f, se);
+ge = imerode(f, se);
+gg = gd - ge;
+montage({f, gd, ge, gg}, 'size', [2 2])
+```
+
+![|500](img/brain.jpg)
 
 ## Challenges
